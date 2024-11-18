@@ -37,6 +37,7 @@ public class LimitOrderBook {
         // Cancel an order and check updates
         book.cancelOrder(1);
         System.out.println("Best Bid after cancel: " + book.getBestBid()); // Should print -1 as no buy orders are left
+        scan.close();
     }
 }
 
