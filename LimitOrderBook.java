@@ -1,5 +1,44 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
+
+public class LimitOrderBook {
+    public static void main(String[] args) {
+        Book book = new Book();
+
+        Scanner scan = new Scanner(System.in);
+        System.out.print("Please enter your Id Number:");
+        int idNumber = scan.nextInt();
+
+        System.out.println("Select action:");
+        System.out.println("1. Buy order");
+        System.out.println("2. Sell order");
+        int n = scan.nextInt();
+        boolean action;
+        if (n == 1) {
+            action = true;
+        } else {
+            action = false;
+        }
+        System.out.print("Enter quantity of shares:");
+        int amount = scan.nextInt();
+        scan.nextLine();
+
+        System.out.print("Enter limit:");
+        int limit = scan.nextInt();
+        // Add orders
+        Order order1 = new Order(idNumber, action, amount, limit); // Buy order
+        book.addOrder(order1);
+
+        // Test best bid and offer
+        System.out.println("Best Bid: " + book.getBestBid()); 
+        System.out.println("Best Offer: " + book.getBestOffer());
+
+        // Cancel an order and check updates
+        book.cancelOrder(1);
+        System.out.println("Best Bid after cancel: " + book.getBestBid()); // Should print -1 as no buy orders are left
+    }
+}
 
 class Order {
     int idNumber;
@@ -143,25 +182,5 @@ class Book {
         } else {
             lowestSell = sellLimits.values().stream().min((a, b) -> a.limitPrice - b.limitPrice).orElse(null);
         }
-    }
-}
-
-public class LimitOrderBook {
-    public static void main(String[] args) {
-        Book book = new Book();
-
-        // Add orders
-        Order order1 = new Order(1, true, 100, 50); // Buy order
-        Order order2 = new Order(2, false, 150, 55); // Sell order
-        book.addOrder(order1);
-        book.addOrder(order2);
-
-        // Test best bid and offer
-        System.out.println("Best Bid: " + book.getBestBid()); // Should print 50
-        System.out.println("Best Offer: " + book.getBestOffer()); // Should print 55
-
-        // Cancel an order and check updates
-        book.cancelOrder(1);
-        System.out.println("Best Bid after cancel: " + book.getBestBid()); // Should print -1 as no buy orders are left
     }
 }
