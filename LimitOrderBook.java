@@ -1,5 +1,49 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
+
+public class LimitOrderBook {
+    public static void main(String[] args) {
+        Book book = new Book();
+
+        @SuppressWarnings("resource")
+        Scanner scan = new Scanner(System.in);
+        while (true) {
+            System.out.print("Please enter your Id Number: ");
+            int idNumber = scan.nextInt();
+
+            System.out.println("Select action:");
+            System.out.println("1. Buy order");
+            System.out.println("2. Sell order");
+            int n = scan.nextInt();
+            boolean action = n == 1;
+
+            System.out.print("Enter quantity of shares: ");
+            int amount = scan.nextInt();
+
+            System.out.print("Enter limit: ");
+            int limit = scan.nextInt();
+
+            // Add orders
+            Order order = new Order(idNumber, action, amount, limit);
+            book.addOrder(order);
+
+            // Display best bid and offer
+            System.out.println("Best Bid: " + book.getBestBid());
+            System.out.println("Best Offer: " + book.getBestOffer());
+
+            // Prompt for order cancellation
+            System.out.println("Do you want to cancel the order?");
+            System.out.println("1. Yes \n2. No");
+            int cancel = scan.nextInt();
+            if (cancel == 1) {
+                book.cancelOrder(idNumber);
+                System.out.println("Best Bid after cancel: " + book.getBestBid());
+                System.out.println("Best Offer after cancel: " + book.getBestOffer());
+            }
+        }
+    }
+}
 
 class Order {
     int idNumber;
@@ -25,9 +69,6 @@ class Limit {
     int limitPrice;
     int size;
     int totalVolume;
-    Limit parent;
-    Limit leftChild;
-    Limit rightChild;
     Order headOrder;
     Order tailOrder;
 
@@ -76,8 +117,8 @@ class Book {
 
     public void addOrder(Order order) {
         orders.put(order.idNumber, order);
-        Limit limit;
         Map<Integer, Limit> limitTree = order.buyOrSell ? buyLimits : sellLimits;
+        Limit limit;
 
         if (!limitTree.containsKey(order.limit)) {
             limit = new Limit(order.limit);
@@ -96,23 +137,12 @@ class Book {
             limit.removeOrder(order);
 
             if (limit.size == 0) {
-                if (order.buyOrSell)
+                if (order.buyOrSell) {
                     buyLimits.remove(limit.limitPrice);
-                else
+                } else {
                     sellLimits.remove(limit.limitPrice);
+                }
                 updateBestPricesAfterRemoval(order.buyOrSell);
-            }
-        }
-    }
-
-    public void executeOrder(int orderId, int sharesToExecute) {
-        Order order = orders.get(orderId);
-        if (order != null) {
-            order.shares -= sharesToExecute;
-            order.parentLimit.totalVolume -= sharesToExecute;
-
-            if (order.shares <= 0) {
-                cancelOrder(orderId); // Fully executed, remove order
             }
         }
     }
@@ -126,11 +156,11 @@ class Book {
     }
 
     private void updateBestPrices(Order order) {
-        if (order.buyOrSell) {
+        if (order.buyOrSell) { // Buy order
             if (highestBuy == null || order.limit > highestBuy.limitPrice) {
                 highestBuy = buyLimits.get(order.limit);
             }
-        } else {
+        } else { // Sell order
             if (lowestSell == null || order.limit < lowestSell.limitPrice) {
                 lowestSell = sellLimits.get(order.limit);
             }
@@ -139,29 +169,17 @@ class Book {
 
     private void updateBestPricesAfterRemoval(boolean isBuyOrder) {
         if (isBuyOrder) {
-            highestBuy = buyLimits.values().stream().max((a, b) -> a.limitPrice - b.limitPrice).orElse(null);
+            // Find the new highest buy limit
+            highestBuy = buyLimits.values()
+                                  .stream()
+                                  .max((a, b) -> Integer.compare(a.limitPrice, b.limitPrice))
+                                  .orElse(null);
         } else {
-            lowestSell = sellLimits.values().stream().min((a, b) -> a.limitPrice - b.limitPrice).orElse(null);
+            // Find the new lowest sell limit
+            lowestSell = sellLimits.values()
+                                   .stream()
+                                   .min((a, b) -> Integer.compare(a.limitPrice, b.limitPrice))
+                                   .orElse(null);
         }
-    }
-}
-
-public class LimitOrderBook {
-    public static void main(String[] args) {
-        Book book = new Book();
-
-        // Add orders
-        Order order1 = new Order(1, true, 100, 50); // Buy order
-        Order order2 = new Order(2, false, 150, 55); // Sell order
-        book.addOrder(order1);
-        book.addOrder(order2);
-
-        // Test best bid and offer
-        System.out.println("Best Bid: " + book.getBestBid()); // Should print 50
-        System.out.println("Best Offer: " + book.getBestOffer()); // Should print 55
-
-        // Cancel an order and check updates
-        book.cancelOrder(1);
-        System.out.println("Best Bid after cancel: " + book.getBestBid()); // Should print -1 as no buy orders are left
     }
 }
